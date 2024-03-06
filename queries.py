@@ -13,7 +13,21 @@ def create_new_user(username, full_name, email, password_hash):
         print(f"Database error: {e}")
      finally:
         conn.close()
-     
+
+#collect profile user
+def profile_user(username):
+     try:
+         conn = sqlite3.connect("BookDatabase.db")
+         cur = conn.cursor()
+         cur.execute("SELECT username, full_name, email, password_hash FROM users WHERE username = ?", (username,))
+         user_info = cur.fetchone()  # Fetches the first row of the query result
+         return user_info
+     except sqlite3.Error as e:
+        print(f"Database error: {e}")
+        return None
+     finally:
+        conn.close() 
+        
 #check the user
 def check_username_exists(username):
     conn = sqlite3.connect("BookDatabase.db")
@@ -21,9 +35,24 @@ def check_username_exists(username):
     cur.execute("SELECT * FROM users WHERE username=?", (username,))
     result = cur.fetchone()
     conn.close()
-    return result is not None        
+    return result is not None 
 
+#check the user in input login 
+def check_credentials(username, password):
+    conn = sqlite3.connect("BookDatabase.db")
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE username=? AND password_hash=?", (username, password))
+    result = cur.fetchone()
+    conn.close()
+    return result is not None, result
 
+## uses check credentials to return none of the users info
+def get_user_info(username, password):
+    credentials_valid, user_row = check_credentials(username, password)
+    if credentials_valid:
+        return user_row
+    else:
+        return None
 
 #Add a new author
 def INSERT_INTO_authors(name, bio):

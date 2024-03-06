@@ -5,7 +5,7 @@ from tkinter import messagebox
 from tkinter.ttk import *
 from tkinter import font
 from random import randint
-from queries import  INSERT_new_books, INSERT_INTO_categories, INSERT_INTO_authors, create_new_user, Borrow_book, Return_book, find_book, current_loans, check_username_exists
+from queries import  INSERT_new_books, INSERT_INTO_categories, INSERT_INTO_authors, create_new_user, Borrow_book, Return_book, find_book, current_loans, check_username_exists, profile_user, get_user_info
 from PIL import Image, ImageTk
 import sqlite3
 import tkinter as tk
@@ -45,8 +45,13 @@ def startpage():
     logo.place(x=250, y=150)
 
     # Start the app
+    #create sign in button
     openButton = Button(mainFrame, text="Sign In", command=signIN)
-    openButton.place(width=350, height=50, x=300, y=380)
+    openButton.place(width=100, height=50, x=300, y=380)
+    
+    #create login button 
+    openButton = Button(mainFrame, text="Log In", command=logIn)
+    openButton.place(width=100, height=50, x=600, y=380)
     root.mainloop()
 
 # Create labels and entry fields for user input
@@ -87,6 +92,11 @@ def signIN():
 # Button to create a new user
  create_button = Button(SinIn_page, text="Enter User", command = new_user)
  create_button.grid(row=16, column=10)
+ #backbutton
+ global storeBackButton
+ #pageControlFrame = Frame(page, style="Main.TFrame")
+ storeBackButton = Button(SinIn_page, text="<--", command=store_previous_page2)
+ storeBackButton.place(width=50, height=50, x=18, y=550) 
  
  # Function to validate the password
 def password_check(password_entry):
@@ -134,11 +144,59 @@ def new_user():
       choose_enter()
      else:
         accountExists.config(text="Account already exists")
+        
+# Create labels and entry fields for Login input
+def logIn():
+ global userIncorect
+ global username_entry
+ global password_entry
+
+
+ SinIn_page = Frame(mainFrame, style="Main.TFrame")
+ SinIn_page.place(width=1000, height=1000)
+
+ Label(SinIn_page, text="Username:").grid(row=6, column=10, sticky="e")
+ username_entry = Entry(SinIn_page)
+ username_entry.grid(row=6, column=12)
+
+ Label(SinIn_page, text="Password:").grid(row=12, column=10, sticky="e")
+ password_entry = Entry(SinIn_page, show="*")
+ password_entry.grid(row=12, column=12)
+ 
+ userIncorect = Label(SinIn_page, background=background)
+ userIncorect.place(width=100, x=10, y=370)
+
+# Button
+ create_button = Button(SinIn_page, text="Login", command = lambda: login_verify(username_entry.get(), password_entry.get()))
+ create_button.grid(row=20, column=10)
+ #backbutton
+ global storeBackButton
+ #pageControlFrame = Frame(page, style="Main.TFrame")
+ storeBackButton = Button(SinIn_page, text="<--", command=store_previous_page2)
+ storeBackButton.place(width=50, height=50, x=18, y=550) 
+
+def login_verify(user, pword):
+    userInfo = get_user_info(user, pword)
+    if userInfo:
+        user = username_entry
+        pword = password_entry
+        user = userInfo[0]
+        pword = userInfo[1]
+        #homeButton.config(state="normal")
+        #basketButton.config(state="normal")
+        #profileButton.config(state="normal")
+        choose_enter()
+    else:
+        userIncorect.config(text="User name or Password Incorrect") 
+        
+
 
 
 
 #create choose page 
-def choose_enter():  
+def choose_enter():
+    global background
+    global username_entry
     # Title of the page
     page = Frame(mainFrame, style="Main.TFrame")
     page.place(width=1000, height=1000)
@@ -166,6 +224,23 @@ def choose_enter():
 
     LButton = Button(page, text="Search for Loan Book", command=search2)
     LButton.place(width=350, height=50, x=18, y=350) 
+    
+    #profile button
+    # Load the profile icon image
+    image = Image.open("my-profile.jpg")
+    image = image.resize((50, 50), Image.ANTIALIAS)
+    photo = ImageTk.PhotoImage(image)
+    #profile_icon = PhotoImage(file="user.png")
+
+
+    # Creating the Profile button with an icon
+    PButton = tk.Button(page, image=photo, compound="left",background=background, command=lambda: show_profile(username_entry.get()))
+    PButton.place(width=100, height=50, x=850, y=20)
+    PButton.photo = photo  # Keep a reference
+
+    
+    #PButton = Button(page, text="Profile", command=lambda: show_profile(username_entry.get()))
+    #PButton.place(width=350, height=50, x=18, y=450) 
 
     #backbutton
     global storeBackButton
@@ -354,16 +429,49 @@ def INSERT_categories():
     INSERT_INTO_categories(Categoriesname)
     messagebox.showinfo("Success", "categories insert successfully")
 
-
+#take you to main mune page
 def store_previous_page():
     #global storeCurrentPage
     choose_enter()
 
+#take you to sign in page
 def store_previous_page1():
     #global storeCurrentPage
     signIN()
+    
+#take you to sign in page
+def store_previous_page2():
+    #global storeCurrentPage
+    startpage()
 
-     
+#profile page 
+
+def show_profile(username):
+    user_info = profile_user(username) # Fetch user info from the database
+
+    if user_info is None:
+        messagebox.showerror("Error", "User not found")
+        return
+
+    profile_page = Frame(mainFrame, style="Main.TFrame")
+    profile_page.place(width=1000, height=600)
+
+    Label(profile_page, text="Username:").grid(row=0, column=0)
+    Label(profile_page, text=user_info[0]).grid(row=0, column=1)  # Assuming username is the first column
+
+    Label(profile_page, text="Full Name:").grid(row=1, column=0)
+    Label(profile_page, text=user_info[1]).grid(row=1, column=1)  # Assuming full_name is the second column
+
+    Label(profile_page, text="Email:").grid(row=2, column=0)
+    Label(profile_page, text=user_info[2]).grid(row=2, column=1)  # Assuming email is the third column
+      #backbutton
+    global storeBackButton
+    storeBackButton = Button(profile_page, text="<--", command=store_previous_page)
+    storeBackButton.place(width=70, height=30, y=500, x=18)
+
+    
+    
+  
 
 startpage()
 
